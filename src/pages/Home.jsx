@@ -1,0 +1,12 @@
+import Hero from '../components/Hero'
+import ImpactStats from '../components/ImpactStats'
+import AboutSection from '../components/AboutSection'
+import Programs from '../components/Programs'
+import Projects from '../components/Projects'
+import WhyDDA from '../components/WhyDDA'
+import VisionMission from '../components/VisionMission'
+import News from '../components/News'
+import Gallery from '../components/Gallery'
+import GetInvolved from '../components/GetInvolved'
+import ContactCTA from '../components/ContactCTA'
+export default function Home(){return <main><Hero/><ImpactStats/><AboutSection/><Programs/><Projects/><WhyDDA/><VisionMission/><News/><Gallery/><GetInvolved/><ContactCTA/></main>}

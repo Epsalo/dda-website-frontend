@@ -1,0 +1,2 @@
+import Button from './Button'
+export default function ContactCTA(){return <section id="contact" className="contact-cta"><div className="container contact-inner"><div><div className="section-kicker">LET'S WORK TOGETHER</div><h2>Let's build a better future.</h2><p>Partner with DDA and help create lasting opportunities for communities.</p></div><div className="contact-buttons"><Button href="/donate" large arrow>Donate Now</Button><Button href="/contact" variant="outline-blue" large>Contact Us</Button></div></div></section>}
