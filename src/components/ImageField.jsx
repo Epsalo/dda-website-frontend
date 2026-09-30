@@ -1,6 +1,6 @@
 import React from "react";
 import { UploadCloud } from "lucide-react";
-import { uploadImage } from "../api/client";
+import { uploadImage, getImageUrl } from "../api/client";
 
 export default function ImageField({ label, value, onChange, required }) {
   const [uploading, setUploading] = React.useState(false);
@@ -17,7 +17,7 @@ export default function ImageField({ label, value, onChange, required }) {
   return <label className="image-upload-field">
     <span>{label}{required ? " *" : ""}</span>
     <div className="image-upload-row">
-      {value ? <img className="image-upload-preview" src={value} alt="Preview" /> : <div className="image-upload-preview image-upload-empty"><UploadCloud size={22} /></div>}
+      {value ? <img className="image-upload-preview" src={getImageUrl(value)} alt="Preview" /> : <div className="image-upload-preview image-upload-empty"><UploadCloud size={22} /></div>}
       <div className="image-upload-controls">
         <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder="Paste an image URL or upload a file" required={required && !value} />
         <label className="btn btn-outline-blue btn-upload">

@@ -2,6 +2,7 @@ import { ArrowRight, HeartHandshake, Leaf, ShieldCheck, Users } from 'lucide-rea
 import { Link } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader'
 import { useSiteContent } from '../context/SiteContentContext'
+import { getImageUrl } from '../api/client'
 
 const DEFAULT_ABOUT_PAGE_IMAGE = "https://images.unsplash.com/photo-1509099836639-18ba02c7f2b4?auto=format&fit=crop&w=1200&q=85"
 
@@ -14,6 +15,7 @@ const values = [
 
 export default function About() {
   const { content } = useSiteContent()
+  const aboutImg = getImageUrl(content?.aboutPageImageUrl) || DEFAULT_ABOUT_PAGE_IMAGE
   return (
     <main>
       <section className="page-hero">
@@ -33,7 +35,7 @@ export default function About() {
             <Link className="btn btn-primary" to="/programs">Explore our programs <ArrowRight size={17} /></Link>
           </div>
           <div className="about-photo about-photo-large">
-            <img src={content?.aboutPageImageUrl || DEFAULT_ABOUT_PAGE_IMAGE} alt="Children learning together in a community setting" />
+            <img src={aboutImg} alt="Children learning together in a community setting" />
           </div>
         </div>
       </section>

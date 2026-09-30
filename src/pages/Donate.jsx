@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Banknote, Globe2, Copy, CheckCircle2, XCircle, Hourglass, HeartHandshake, Smartphone } from "lucide-react";
 import SectionHeader from "../components/SectionHeader";
-import { initializeDonation, getDonationConfig, getDonationSettings } from "../api/donations.api";
+import { initializeDonation, getDonationConfig, getDonationSettings, verifyDonation } from "../api/donations.api";
 import { BANKS, WALLETS } from "../data/donationMethods";
 
 const PRESETS = [100, 250, 500, 1000, 2500, 5000];
@@ -99,8 +99,7 @@ export function DonateReturn() {
     let attempts = 0;
     const verify = () => {
       attempts += 1;
-      fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/donations/verify/${encodeURIComponent(txRef)}`)
-        .then(r => r.json())
+      verifyDonation(txRef)
         .then(result => {
           if (!active) return;
           if (result.success) {
