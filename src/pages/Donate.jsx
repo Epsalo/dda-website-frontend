@@ -4,6 +4,7 @@ import { Banknote, Globe2, Copy, CheckCircle2, XCircle, Hourglass, HeartHandshak
 import SectionHeader from "../components/SectionHeader";
 import { initializeDonation, getDonationConfig, getDonationSettings, verifyDonation } from "../api/donations.api";
 import { BANKS, WALLETS } from "../data/donationMethods";
+import { getImageUrl } from "../api/client";
 
 const PRESETS = [100, 250, 500, 1000, 2500, 5000];
 
@@ -154,11 +155,12 @@ function useCopyText() {
 
 function MethodLogo({ item }) {
   const [err, setErr] = React.useState(false);
-  if (!item.logo || err) {
-    const initials = item.short || item.name.split(/\s+/).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+  const resolvedLogo = item.logo ? getImageUrl(item.logo) : "";
+  if (!resolvedLogo || err) {
+    const initials = item.short || (item.name || "").split(/\s+/).map(w => w[0]).join("").slice(0, 3).toUpperCase();
     return <span className="method-mono" style={{ background: item.color || "#1f3f8f" }}>{initials}</span>;
   }
-  return <img src={item.logo} alt={item.name} onError={() => setErr(true)}/>;
+  return <img src={resolvedLogo} alt={item.name} onError={() => setErr(true)}/>;
 }
 
 export function MethodChooser({ settings }) {
@@ -166,44 +168,82 @@ export function MethodChooser({ settings }) {
   const [selected, setSelected] = React.useState(null);
   const [copied, copy] = useCopyText();
 
-  const catalog = method === "bank" ? BANKS : WALLETS;
   const accounts = (method === "bank" ? settings?.bankAccounts : settings?.walletAccounts) || [];
-  const item = catalog.find(c => c.id === selected);
-  const acc = accounts.find(a => a.id === selected || (a.bank || a.wallet || "").toLowerCase() === item?.name.toLowerCase());
+  const presets = method === "bank" ? BANKS : WALLETS;
+
+  const displayItems = React.useMemo(() => {
+    if (accounts.length > 0) {
+      return accounts.map((acc, idx) => {
+        const preset = presets.find(p => p.id === acc.id);
+        const name = acc.name || preset?.name || acc.bank || acc.wallet || `Account #${idx + 1}`;
+        const key = acc.id === "custom" || !acc.id ? `custom-${idx}` : (acc.id || `acc-${idx}`);
+        return {
+          id: key,
+          originalId: acc.id,
+          name,
+          short: acc.short || preset?.short || name.slice(0, 3).toUpperCase(),
+          color: acc.color || preset?.color || "#1f3f8f",
+          logo: acc.logo || preset?.logo || "",
+          account: acc,
+        };
+      });
+    }
+    return presets.map(p => ({
+      id: p.id,
+      originalId: p.id,
+      name: p.name,
+      short: p.short,
+      color: p.color,
+      logo: p.logo,
+      account: null,
+    }));
+  }, [accounts, presets]);
+
+  React.useEffect(() => {
+    if (method && displayItems.length > 0) {
+      if (!selected || !displayItems.some(i => i.id === selected)) {
+        setSelected(displayItems[0].id);
+      }
+    }
+  }, [method, displayItems, selected]);
+
+  const activeItem = displayItems.find(c => c.id === selected) || displayItems[0];
+  const acc = activeItem?.account || accounts.find(a => a.id === selected || (a.bank || a.wallet || "").toLowerCase() === activeItem?.name?.toLowerCase());
   const number = acc ? (acc.accountNumber || acc.number || "") : "";
   const hasDetails = Boolean(number);
 
   return <div className="method-chooser">
-    <p className="donate-online-soon chooser-note"><strong>Online giving is coming soon.</strong> We are setting up secure payments through Chapa. For now, choose how you would like to transfer your donation.</p>
+    <p className="donate-online-soon chooser-note"><strong>Direct Giving:</strong> Choose your preferred bank or mobile money channel below to transfer your contribution securely.</p>
 
     {!method && <div className="method-cards">
-      <button type="button" className="method-card" onClick={() => setMethod("bank")}>
-        <Banknote size={28}/><span>Donate by bank</span><small>Transfer from any Ethiopian bank account</small>
+      <button type="button" className="method-card" onClick={() => { setMethod("bank"); setSelected(null); }}>
+        <Banknote size={28}/><span>Donate by bank</span><small>Commercial Bank, Awash, Dashen, Siinqee & other banks</small>
       </button>
-      <button type="button" className="method-card" onClick={() => setMethod("wallet")}>
-        <Smartphone size={28}/><span>Donate by wallet</span><small>Telebirr, M-Pesa, CBE Birr, Coopay-Ebirr</small>
+      <button type="button" className="method-card" onClick={() => { setMethod("wallet"); setSelected(null); }}>
+        <Smartphone size={28}/><span>Donate by wallet</span><small>Telebirr, CBE Birr, M-Pesa, Coopay-Ebirr</small>
       </button>
     </div>}
 
     {method && <div className="method-body">
       <button type="button" className="chooser-back" onClick={() => { setMethod(null); setSelected(null); }}>← Change method</button>
       <div className="method-grid">
-        {catalog.map(c => <button key={c.id} type="button" className={`method-tile${selected === c.id ? " selected" : ""}`} onClick={() => setSelected(c.id)}>
+        {displayItems.map(c => <button key={c.id} type="button" className={`method-tile${selected === c.id ? " selected" : ""}`} onClick={() => setSelected(c.id)}>
           <MethodLogo item={c}/><span>{c.name}</span>
         </button>)}
       </div>
 
-      {item && <div className="method-details">
-        <h3>{item.name}</h3>
+      {activeItem && <div className="method-details">
+        <h3>{activeItem.name}</h3>
         {hasDetails ? <dl className="bank-details">
-          <div><dt>Account name</dt><dd>{acc.accountName || "—"}</dd></div>
-          <div><dt>{method === "bank" ? "Account number" : "Wallet number"}</dt>
+          <div><dt>Account name</dt><dd>{acc.accountName || "Dembel Development Alliance"}</dd></div>
+          <div><dt>{method === "bank" ? "Account number" : "Wallet / Phone"}</dt>
             <dd className="account-number">{number} <button type="button" className="copy-btn" onClick={() => copy(number)}>{copied === number ? <CheckCircle2 size={14}/> : <Copy size={14}/>} {copied === number ? "Copied" : "Copy"}</button></dd>
           </div>
           {method === "bank" && acc.branch && <div><dt>Branch</dt><dd>{acc.branch}</dd></div>}
-        </dl> : <p className="bank-empty">The {item.name} account details will be published here soon. Meanwhile, please <Link to="/contact">contact us</Link> if you would like to donate.</p>}
-        {hasDetails && <p className="bank-note">After transferring, kindly send the receipt to our contact address so we can confirm and thank you personally.</p>}
+        </dl> : <p className="bank-empty">The {activeItem.name} account details will be published here soon. Meanwhile, please <Link to="/contact">contact us</Link> if you would like to donate.</p>}
+        {hasDetails && <p className="bank-note">After transferring, kindly send the receipt or confirmation SMS to our contact team so we can acknowledge and thank you.</p>}
       </div>}
     </div>}
   </div>;
 }
+
